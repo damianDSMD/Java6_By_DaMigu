@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>User Info</title>
+</head>
+<body>
+<div class="card mt-4" th:fragment="user-info">
+    <div class="card-header bg-success text-white">
+        <h5>User Information</h5>
+    </div>
+    <div class="card-body">
+        <div sec:authorize="isAuthenticated()">
+            <p><strong>Status:</strong> <span class="badge bg-success">Authenticated</span></p>
+            <p><strong>Username:</strong> <span sec:authentication="name"></span></p>
+            <p><strong>Authorities:</strong> <span sec:authentication="authorities"></span></p>
+            <form th:action="@{/logout}" method="post" class="mt-2">
+                <button type="submit" class="btn btn-danger btn-sm">Logout</button>
+            </form>
+        </div>
+
+        <div sec:authorize="!isAuthenticated()">
+            <p><strong>Status:</strong> <span class="badge bg-warning">Anonymous</span></p>
+            <p>You are not logged in.</p>
+            <a href="/login" class="btn btn-primary btn-sm">Login</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
