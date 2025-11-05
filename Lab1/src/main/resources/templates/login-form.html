@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Form</title>
+    <title>Login - Spring Security Lab</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -12,125 +13,269 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
         .login-container {
-            max-width: 450px;
+            max-width: 480px;
             width: 100%;
+            padding: 20px;
         }
+
         .card {
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
         }
+
         .card-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 25px;
+            border: none;
+            padding: 30px 25px;
+            text-align: center;
         }
+
+        .card-header h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .card-body {
+            padding: 35px 30px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
         .form-control:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
+
+        .input-group-text {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+
         .btn-login {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            padding: 12px;
-            font-weight: bold;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
         }
+
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-home {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .test-accounts {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .test-accounts h6 {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .test-accounts ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .test-accounts li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .test-accounts li:last-child {
+            border-bottom: none;
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="login-container mx-auto">
-        <div class="card">
-            <div class="card-header text-center">
-                <h3><i class="bi bi-shield-lock"></i> Login Form</h3>
-                <p class="mb-0">Spring Boot Security Lab 1</p>
-            </div>
-            <div class="card-body p-4">
-                <!-- Message Alert -->
-                <div class="alert"
-                     th:classappend="${message == 'Đăng nhập thành công'} ? 'alert-success' :
-                                        ${message == 'Đăng nhập thất bại'} ? 'alert-danger' :
-                                        ${message == 'Đăng xuất thành công'} ? 'alert-info' : 'alert-primary'"
-                     role="alert">
-                    <strong th:text="${message}"></strong>
-                </div>
+<div class="login-container">
+    <div class="card">
+        <!-- Card Header -->
+        <div class="card-header">
+            <h3>
+                <i class="bi bi-shield-lock-fill"></i> Login
+            </h3>
+            <p>Spring Boot Security Lab 1</p>
+        </div>
 
-                <!-- Login Form -->
-                <form th:action="@{/login}" method="post">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">
-                            <i class="bi bi-person"></i> Email / Username
-                        </label>
+        <!-- Card Body -->
+        <div class="card-body">
+            <!-- Message Alert -->
+            <div th:if="${message == 'Đăng nhập thành công'}" class="alert alert-custom alert-success mb-4" role="alert">
+                <i class="bi bi-check-circle-fill"></i>
+                <strong th:text="${message}"></strong>
+            </div>
+
+            <div th:if="${message == 'Đăng nhập thất bại'}" class="alert alert-custom alert-danger mb-4" role="alert">
+                <i class="bi bi-x-circle-fill"></i>
+                <strong th:text="${message}"></strong>
+            </div>
+
+            <div th:if="${message == 'Đăng xuất thành công'}" class="alert alert-custom alert-info mb-4" role="alert">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong th:text="${message}"></strong>
+            </div>
+
+            <div th:if="${message == 'Vui lòng đăng nhập'}" class="alert alert-custom alert-primary mb-4" role="alert">
+                <i class="bi bi-info-circle"></i>
+                <strong th:text="${message}"></strong>
+            </div>
+
+            <div th:if="${message != 'Đăng nhập thành công' and message != 'Đăng nhập thất bại' and message != 'Đăng xuất thành công' and message != 'Vui lòng đăng nhập'}" class="alert alert-custom alert-primary mb-4" role="alert">
+                <i class="bi bi-info-circle"></i>
+                <strong>Please login to access</strong>
+            </div>
+
+            <!-- Login Form -->
+            <form th:action="@{/login}" method="post">
+                <!-- Username Field -->
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="bi bi-person-fill"></i> Email / Username
+                    </label>
+                    <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-envelope"></i>
+                            </span>
                         <input type="text"
                                class="form-control"
                                id="username"
                                name="username"
                                placeholder="user@gmail.com"
-                               required>
-                        <small class="form-text text-muted">
-                            Use: user@gmail.com, admin@gmail.com, or both@gmail.com
-                        </small>
+                               required
+                               autofocus>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">
-                            <i class="bi bi-lock"></i> Password
-                        </label>
+                <!-- Password Field -->
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-key-fill"></i> Password
+                    </label>
+                    <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-lock"></i>
+                            </span>
                         <input type="password"
                                class="form-control"
                                id="password"
                                name="password"
-                               placeholder="Enter password"
+                               placeholder="Enter your password"
                                required>
-                        <small class="form-text text-muted">
-                            Password: 123
-                        </small>
                     </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox"
-                               class="form-check-input"
-                               id="remember-me"
-                               name="remember-me">
-                        <label class="form-check-label" for="remember-me">
-                            Remember me for 3 days
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-login w-100">
-                        <i class="bi bi-box-arrow-in-right"></i> Login
-                    </button>
-                </form>
-
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <a href="/" class="btn btn-outline-secondary">
-                        <i class="bi bi-house"></i> Back to Home
-                    </a>
                 </div>
 
-                <!-- User Info -->
-                <div class="mt-4 p-3 bg-light rounded">
-                    <h6 class="text-muted">Test Accounts:</h6>
-                    <ul class="list-unstyled mb-0 small">
-                        <li><strong>User:</strong> user@gmail.com / 123</li>
-                        <li><strong>Admin:</strong> admin@gmail.com / 123</li>
-                        <li><strong>Both:</strong> both@gmail.com / 123</li>
-                    </ul>
+                <!-- Remember Me Checkbox -->
+                <div class="mb-4 form-check">
+                    <input type="checkbox"
+                           class="form-check-input"
+                           id="remember-me"
+                           name="remember-me">
+                    <label class="form-check-label" for="remember-me">
+                        <i class="bi bi-clock-history"></i> Remember me for 3 days
+                    </label>
                 </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="btn btn-primary btn-login w-100">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </button>
+            </form>
+
+            <hr class="my-4">
+
+            <!-- Back to Home Button -->
+            <div class="text-center mb-4">
+                <a href="/" class="btn btn-outline-secondary btn-home">
+                    <i class="bi bi-house-door"></i> Back to Home
+                </a>
+            </div>
+
+            <!-- Test Accounts Info -->
+            <div class="test-accounts">
+                <h6>
+                    <i class="bi bi-key"></i> Test Accounts
+                </h6>
+                <ul>
+                    <li>
+                        <i class="bi bi-person"></i>
+                        <strong>User:</strong> user@gmail.com
+                        <span class="text-muted">/ Password: 123</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-person-badge"></i>
+                        <strong>Admin:</strong> admin@gmail.com
+                        <span class="text-muted">/ Password: 123</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-people"></i>
+                        <strong>Both:</strong> both@gmail.com
+                        <span class="text-muted">/ Password: 123</span>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
+
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </body>
 </html>

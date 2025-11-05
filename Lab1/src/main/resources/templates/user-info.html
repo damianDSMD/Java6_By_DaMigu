@@ -3,27 +3,80 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>User Info</title>
+    <title>User Info Fragment</title>
 </head>
 <body>
-<div class="card mt-4" th:fragment="user-info">
+<!-- User Information Fragment (Bài 2 & 3) -->
+<div th:fragment="user-info" class="card">
     <div class="card-header bg-success text-white">
-        <h5>User Information</h5>
+        <h5 class="mb-0"><i class="bi bi-person-circle"></i> User Information</h5>
     </div>
     <div class="card-body">
+        <!-- Authenticated User Info -->
         <div sec:authorize="isAuthenticated()">
-            <p><strong>Status:</strong> <span class="badge bg-success">Authenticated</span></p>
-            <p><strong>Username:</strong> <span sec:authentication="name"></span></p>
-            <p><strong>Authorities:</strong> <span sec:authentication="authorities"></span></p>
-            <form th:action="@{/logout}" method="post" class="mt-2">
-                <button type="submit" class="btn btn-danger btn-sm">Logout</button>
-            </form>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2">
+                        <strong><i class="bi bi-check-circle-fill text-success"></i> Status:</strong>
+                        <span class="badge bg-success ms-2">Authenticated</span>
+                    </p>
+                    <p class="mb-2">
+                        <strong><i class="bi bi-person"></i> Username:</strong>
+                        <span class="text-primary ms-2" sec:authentication="name"></span>
+                    </p>
+                    <p class="mb-2">
+                        <strong><i class="bi bi-shield-check"></i> Roles:</strong>
+                        <span class="text-info ms-2" sec:authentication="authorities"></span>
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Info -->
+            <hr>
+            <div class="alert alert-info mb-0">
+                <small>
+                    <i class="bi bi-info-circle"></i>
+                    You are currently logged in and can access protected resources under <code>/poly/**</code>
+                </small>
+            </div>
         </div>
 
+        <!-- Anonymous User Info -->
         <div sec:authorize="!isAuthenticated()">
-            <p><strong>Status:</strong> <span class="badge bg-warning">Anonymous</span></p>
-            <p>You are not logged in.</p>
-            <a href="/login" class="btn btn-primary btn-sm">Login</a>
+            <div class="text-center">
+                <p class="mb-3">
+                    <i class="bi bi-person-x-fill text-warning fs-1"></i>
+                </p>
+                <p class="mb-2">
+                    <strong>Status:</strong>
+                    <span class="badge bg-warning text-dark ms-2">Not Authenticated</span>
+                </p>
+                <p class="text-muted mb-3">
+                    You are browsing as an anonymous user.
+                    Please login to access protected resources.
+                </p>
+                <a href="/login/form" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+            </div>
+
+            <!-- Test Accounts Info -->
+            <hr>
+            <div class="alert alert-secondary mb-0">
+                <h6 class="alert-heading"><i class="bi bi-key"></i> Test Accounts:</h6>
+                <ul class="mb-0 small">
+                    <li><strong>User:</strong> user@gmail.com / 123 (ROLE_USER)</li>
+                    <li><strong>Admin:</strong> admin@gmail.com / 123 (ROLE_ADMIN)</li>
+                    <li><strong>Both:</strong> both@gmail.com / 123 (ROLE_USER, ROLE_ADMIN)</li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
