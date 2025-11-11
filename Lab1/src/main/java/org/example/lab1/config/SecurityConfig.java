@@ -82,7 +82,7 @@ public class SecurityConfig {
         http.formLogin(form -> {
             form.loginPage("/login/form")                    // Custom login page
                     .loginProcessingUrl("/login")                // Where to submit login form
-                    .defaultSuccessUrl("/login/success", true)   // Redirect after successful login
+                    .defaultSuccessUrl("/", true)                // Redirect to home after successful login
                     .failureUrl("/login/failure")                // Redirect after failed login
                     .permitAll();
         });
