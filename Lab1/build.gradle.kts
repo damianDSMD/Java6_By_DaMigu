@@ -19,24 +19,28 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
+
+    // Spring Security with OAuth2 Client
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
+    // Thymeleaf
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
 
-    // PostgreSQL (for future use)
+    // JPA & PostgreSQL
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("org.postgresql:postgresql")
 
-    // Development tools
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-
-    // Lombok (optional, for cleaner code)
+    // Lombok (reduces boilerplate code)
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
-    // Test dependencies
+    // DevTools
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
 }
