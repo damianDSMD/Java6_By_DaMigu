@@ -9,56 +9,51 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * User Entity - Enhanced with OAuth2 support
- * Supports both local authentication and OAuth2 providers (Google, Facebook, etc.)
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "Users")
 public class User implements Serializable {
 
     @Id
-    @Column(name = "\"Username\"")
+    @Column(name = "Username", length = 50, nullable = false)
     private String username;
 
-    @Column(name = "\"Password\"")
+    @Column(name = "Password", length = 500)
     private String password;
 
-    @Column(name = "\"Fullname\"")
+    @Column(name = "Fullname", length = 100)
     private String fullname;
 
-    @Column(name = "\"Email\"")
+    @Column(name = "Email", length = 100, unique = true)
     private String email;
 
-    @Column(name = "\"Photo\"")
+    @Column(name = "Photo", length = 500)
     private String photo;
 
-    @Column(name = "\"Activated\"")
+    @Column(name = "Activated", nullable = false)
     private Boolean activated = true;
 
-    @Column(name = "\"Admin\"")
+    // MSSQL uses "Admin" as column name (reserved word, use brackets in SQL)
+    @Column(name = "Admin", nullable = false)
     private Boolean admin = false;
 
-    @Column(name = "\"Provider\"")
+    @Column(name = "Provider", length = 20)
     private String provider;
 
-    @Column(name = "\"ProviderId\"")
+    @Column(name = "ProviderId", length = 100)
     private String providerId;
 
-    @Column(name = "\"CreatedAt\"")
+    @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "\"UpdatedAt\"")
+    @Column(name = "UpdatedAt")
     private LocalDateTime updatedAt;
 
-    // Relationships remain the same
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<UserRole> userRoles;
 
-    // JPA Lifecycle callbacks
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -68,19 +63,5 @@ public class User implements Serializable {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    /**
-     * Check if user is using OAuth2 authentication
-     */
-    public boolean isOAuth2User() {
-        return provider != null && !provider.equals("local");
-    }
-
-    /**
-     * Check if user needs password (local authentication)
-     */
-    public boolean needsPassword() {
-        return "local".equals(provider) || provider == null;
     }
 }

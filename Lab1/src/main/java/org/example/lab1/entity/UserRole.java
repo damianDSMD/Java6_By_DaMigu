@@ -6,31 +6,36 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-/**
- * UserRole Entity (Junction Table)
- * Maps to UserRoles table in database
- * Represents many-to-many relationship between Users and Roles
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "\"UserRoles\"", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"\"Username\"", "\"RoleId\""})
+@Table(name = "UserRoles", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"Username", "RoleId"})
 })
 public class UserRole implements Serializable {
 
     @Id
+    // MSSQL uses IDENTITY instead of SERIAL
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "\"Id\"")
+    @Column(name = "Id")
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "\"Username\"")
+    @JoinColumn(name = "Username", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "\"RoleId\"")
+    @JoinColumn(name = "RoleId", nullable = false)
     private Role role;
+
+    @Column(name = "AssignedAt", updatable = false)
+    private LocalDateTime assignedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        assignedAt = LocalDateTime.now();
+    }
 }

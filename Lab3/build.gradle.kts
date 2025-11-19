@@ -25,7 +25,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
-    implementation("org.postgresql:postgresql")
+    implementation("com.microsoft.sqlserver:mssql-jdbc")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

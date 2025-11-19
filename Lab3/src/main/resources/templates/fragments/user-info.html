@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block>
+  <!-- Đã đăng nhập -->
+  <div sec:authorize="isAuthenticated()" class="user-info">
+    Xin chào <strong sec:authentication="name"></strong>
+    (Quyền: <span sec:authentication="authorities"></span>)
+    &nbsp; | &nbsp;
+    <a th:href="@{/logout}">Đăng xuất</a>
+  </div>
+
+  <!-- Chưa đăng nhập -->
+  <div sec:authorize="isAnonymous()" class="user-info">
+    <a th:href="@{/login}">Đăng nhập</a>
+    &nbsp; | &nbsp;
+    <a th:href="@{/oauth2/authorization/google}">Đăng nhập Google</a>
+  </div>
+</th:block>
+</html>
