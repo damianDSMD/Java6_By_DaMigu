@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sinh viên</title>
+    
+</head>
+<body>
+    <h3>QUẢN LÝ SINH VIÊN</h3>
+    <div class="form-container">
+        <p>Id: <input type="text" id="id"></p>
+        <p>Full Name: <input type="text" id="name"></p>
+        <p>Average Mark: <input type="number" id="mark" step="0.1" min="0" max="10"></p>
+        <p>Gender:
+            <input name="gender" type="radio" id="male" checked>Male
+            <input name="gender" type="radio" id="female">Female
+        </p>
+    </div>
+    <hr>
+    <div style="text-align: center;">
+        <button onclick="$api.create()">Create</button>
+        <button onclick="$api.update()">Update</button>
+        <button onclick="$api.delete()">Delete</button>
+        <button onclick="$api.reset()">Reset</button>
+    </div>
+    <hr>
+    <table border="1" style="width:100%">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Mark</th>
+                <th>Gender</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        const host = "https://lab4java5ts00680-default-rtdb.asia-southeast1.firebasedatabase.app";
+        
+        const $api = {
+            key: null,
+            
+            get student() {
+                return {
+                    id: $("#id").val(),
+                    name: $("#name").val(),
+                    mark: parseFloat($("#mark").val()),
+                    gender: $("#male").prop("checked")
+                };
+            },
+            
+            set student(e) {
+                $("#id").val(e.id || "");
+                $("#name").val(e.name || "");
+                $("#mark").val(e.mark || "");
+                $("#male").prop("checked", e.gender);
+                $("#female").prop("checked", !e.gender);
+            },
+            
+            fillToTable() {
+                var url = `${host}/students.json`;
+                axios.get(url).then(resp => {
+                    $("tbody").empty();
+                    if (resp.data) {
+                        Object.keys(resp.data).forEach(key => {
+                            var e = resp.data[key];
+                            var tr = `<tr>
+                                <td>${e.id}</td>
+                                <td>${e.name}</td>
+                                <td>${e.mark}</td>
+                                <td>${e.gender ? 'Male' : 'Female'}</td>
+                                <td>
+                                    <a href="#" onclick="$api.edit('${key}')">Edit</a>
+                                    <a href="#" onclick="$api.delete('${key}')">Delete</a>
+                                </td>
+                            </tr>`;
+                            $("tbody").append(tr);
+                        });
+                    }
+                }).catch(error => {
+                    alert("Lỗi tải danh sách sinh viên!");
+                    console.error(error);
+                });
+            },
+            
+            edit(key) {
+                this.key = key.trim();
+                var url = `${host}/students/${key}.json`;
+                axios.get(url).then(resp => {
+                    this.student = resp.data;
+                }).catch(error => {
+                    alert("Lỗi tải sinh viên!");
+                    console.error(error);
+                });
+            },
+            
+            create() {
+                if (!this.student.id || !this.student.name) {
+                    alert("Vui lòng nhập đầy đủ thông tin!");
+                    return;
+                }
+                var url = `${host}/students.json`;
+                axios.post(url, this.student).then(resp => {
+                    alert("Thêm sinh viên thành công!");
+                    this.fillToTable();
+                    this.reset();
+                }).catch(error => {
+                    alert("Lỗi thêm sinh viên mới!");
+                    console.error(error);
+                });
+            },
+            
+            update() {
+                if (!this.key) {
+                    alert("Vui lòng chọn sinh viên cần cập nhật!");
+                    return;
+                }
+                var url = `${host}/students/${this.key}.json`;
+                axios.put(url, this.student).then(resp => {
+                    alert("Cập nhật sinh viên thành công!");
+                    this.fillToTable();
+                    this.key = null;
+                }).catch(error => {
+                    alert("Lỗi cập nhật sinh viên!");
+                    console.error(error);
+                });
+            },
+            
+            delete(key) {
+                if (!confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) {
+                    return;
+                }
+                var url = `${host}/students/${key || this.key}.json`;
+                axios.delete(url).then(resp => {
+                    alert("Xóa sinh viên thành công!");
+                    this.fillToTable();
+                    this.reset();
+                }).catch(error => {
+                    alert("Lỗi xóa sinh viên!");
+                    console.error(error);
+                });
+            },
+            
+            reset() {
+                this.student = {
+                    id: "",
+                    name: "",
+                    mark: "",
+                    gender: true
+                };
+                this.key = null;
+            }
+        };
+
+        // Load student list when page loads
+        $(document).ready(function() {
+            $api.fillToTable();
+        });
+    </script>
+</body>
+</html>

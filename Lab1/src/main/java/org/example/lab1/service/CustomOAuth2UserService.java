@@ -1,171 +1,131 @@
 package org.example.lab1.service;
 
-import org.example.lab1.dao.RoleDAO;
-import org.example.lab1.dao.UserDAO;
-import org.example.lab1.dao.UserRoleDAO;
 import org.example.lab1.entity.Role;
 import org.example.lab1.entity.User;
 import org.example.lab1.entity.UserRole;
+import org.example.lab1.repository.RoleRepository;
+import org.example.lab1.repository.UserRepository;
+import org.example.lab1.repository.UserRoleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Custom OAuth2 User Service
- * Processes OAuth2 login (Google, Facebook, etc.) and saves user to database
- */
 @Service
-@Transactional
-public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
 
     @Autowired
-    private UserDAO userDAO;
+    private UserRepository userRepository;
 
     @Autowired
-    private RoleDAO roleDAO;
+    private RoleRepository roleRepository;
 
     @Autowired
-    private UserRoleDAO userRoleDAO;
+    private UserRoleRepository userRoleRepository;
 
     @Override
+    @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        // Get OAuth2 user info from provider (Google, Facebook, etc.)
-        OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
-        OAuth2User oauth2User = delegate.loadUser(userRequest);
+        logger.info("==================== OAuth2 Login Started ====================");
 
-        // Get provider name (google, facebook, etc.)
-        String provider = userRequest.getClientRegistration().getRegistrationId();
+        try {
+            // Get OAuth2 user from Google
+            OAuth2User oauth2User = super.loadUser(userRequest);
+            logger.info("✅ Successfully loaded OAuth2User from Google");
 
-        // Extract user attributes from OAuth2 response
-        Map<String, Object> attributes = oauth2User.getAttributes();
+            // Extract attributes from Google
+            Map<String, Object> attributes = oauth2User.getAttributes();
+            logger.info("📋 User attributes: {}", attributes);
 
-        // Process user based on provider
-        User user = processOAuth2User(provider, attributes);
+            String email = (String) attributes.get("email");
+            String name = (String) attributes.get("name");
+            String picture = (String) attributes.get("picture");
+            String providerId = (String) attributes.get("sub");
 
-        // Return OAuth2User with authorities
-        return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
-                attributes,
-                "email"  // Use email as principal name
-        );
+            logger.info("📧 Email: {}", email);
+            logger.info("👤 Name: {}", name);
+            logger.info("🖼️ Picture: {}", picture);
+            logger.info("🆔 Provider ID: {}", providerId);
+
+            // Save or update user in database
+            User savedUser = saveOrUpdateUser(email, name, picture, providerId);
+            logger.info("✅ User saved successfully: {}", savedUser.getUsername());
+
+            logger.info("==================== OAuth2 Login Completed ====================");
+            return oauth2User;
+
+        } catch (Exception e) {
+            logger.error("❌ ERROR in OAuth2 login: {}", e.getMessage(), e);
+            throw new OAuth2AuthenticationException("Error processing OAuth2 user: " + e.getMessage());
+        }
     }
 
-    /**
-     * Process OAuth2 user and save/update in database
-     */
-    private User processOAuth2User(String provider, Map<String, Object> attributes) {
-        String email = null;
-        String name = null;
-        String picture = null;
-        String providerId = null;
+    private User saveOrUpdateUser(String email, String name, String picture, String providerId) {
+        logger.info("🔍 Checking if user exists with email: {}", email);
 
-        // Extract user info based on provider
-        switch (provider.toLowerCase()) {
-            case "google":
-                email = (String) attributes.get("email");
-                name = (String) attributes.get("name");
-                picture = (String) attributes.get("picture");
-                providerId = (String) attributes.get("sub");  // Google user ID
-                break;
-
-            case "facebook":
-                email = (String) attributes.get("email");
-                name = (String) attributes.get("name");
-                picture = extractFacebookPicture(attributes);
-                providerId = (String) attributes.get("id");
-                break;
-
-            default:
-                throw new OAuth2AuthenticationException("Unsupported provider: " + provider);
-        }
-
-        // Check if user already exists by email
-        Optional<User> existingUser = userDAO.findByEmail(email);
+        // Check if user exists by email
+        Optional<User> existingUser = userRepository.findByEmail(email);
 
         User user;
+        boolean isNewUser = false;
+
         if (existingUser.isPresent()) {
-            // Update existing user
+            logger.info("✅ User already exists, updating...");
             user = existingUser.get();
             user.setFullname(name);
             user.setPhoto(picture);
-            user.setProvider(provider);
+            user.setProvider("google");
             user.setProviderId(providerId);
-            userDAO.save(user);
         } else {
-            // Create new user
+            logger.info("🆕 Creating new user...");
             user = new User();
-            user.setUsername(generateUsername(email));
+            user.setUsername(email);
             user.setEmail(email);
             user.setFullname(name);
             user.setPhoto(picture);
-            user.setProvider(provider);
+            user.setProvider("google");
             user.setProviderId(providerId);
-            user.setPassword(null);  // OAuth2 users don't have password
             user.setActivated(true);
             user.setAdmin(false);
+            user.setPassword(null);
+            isNewUser = true;
+        }
 
-            // Save user
-            user = userDAO.save(user);
+        logger.info("💾 Saving user to database...");
+        user = userRepository.save(user);
+        logger.info("✅ User saved with username: {}", user.getUsername());
 
-            // Assign default USER role
-            assignDefaultRole(user);
+        // Assign USER role for new users
+        if (isNewUser) {
+            logger.info("🔑 Assigning USER role to new user...");
+            Optional<Role> userRoleOpt = roleRepository.findById("USER");
+
+            if (userRoleOpt.isEmpty()) {
+                logger.error("❌ USER role not found in database!");
+                throw new RuntimeException("USER role not found in database");
+            }
+
+            Role userRole = userRoleOpt.get();
+            logger.info("✅ Found USER role: {}", userRole.getName());
+
+            UserRole userRoleMapping = new UserRole();
+            userRoleMapping.setUser(user);
+            userRoleMapping.setRole(userRole);
+
+            userRoleRepository.save(userRoleMapping);
+            logger.info("✅ USER role assigned successfully");
         }
 
         return user;
-    }
-
-    /**
-     * Extract Facebook profile picture URL
-     */
-    @SuppressWarnings("unchecked")
-    private String extractFacebookPicture(Map<String, Object> attributes) {
-        if (attributes.containsKey("picture")) {
-            Map<String, Object> pictureObj = (Map<String, Object>) attributes.get("picture");
-            Map<String, Object> data = (Map<String, Object>) pictureObj.get("data");
-            return (String) data.get("url");
-        }
-        return null;
-    }
-
-    /**
-     * Generate unique username from email
-     */
-    private String generateUsername(String email) {
-        String baseUsername = email.split("@")[0];
-        String username = baseUsername;
-        int counter = 1;
-
-        // Ensure username is unique
-        while (userDAO.existsByUsername(username)) {
-            username = baseUsername + counter;
-            counter++;
-        }
-
-        return username;
-    }
-
-    /**
-     * Assign default USER role to new OAuth2 user
-     */
-    private void assignDefaultRole(User user) {
-        Optional<Role> userRole = roleDAO.findById("USER");
-
-        if (userRole.isPresent()) {
-            UserRole ur = new UserRole();
-            ur.setUser(user);
-            ur.setRole(userRole.get());
-            userRoleDAO.save(ur);
-        }
     }
 }

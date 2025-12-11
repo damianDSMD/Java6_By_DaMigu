@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Poly API Tester</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+<h2>Poly API Tester</h2>
+
+<button onclick="callUrl('/poly/url0')">URL0</button>
+<button onclick="callUrl('/poly/url1')">URL1</button>
+<button onclick="callUrl('/poly/url2')">URL2</button>
+<button onclick="callUrl('/poly/url3')">URL3</button>
+<button onclick="callUrl('/poly/url4')">URL4</button>
+
+<h3>Login</h3>
+<input id="username" value="user@gmail.com">
+<input id="password" type="password" value="123">
+<button onclick="login()">Login</button>
+
+<h3>Result:</h3>
+<pre id="result"></pre>
+
+<script>
+  let token = null;
+
+  // Login and store token
+  function login() {
+    axios.post("/poly/login", {
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+    })
+            .then(resp => {
+              token = resp.data.token;
+              document.getElementById("result").innerText =
+                      "Logged in successfully.\nToken:\n" + token;
+            })
+            .catch(err => {
+              document.getElementById("result").innerText = err;
+            });
+  }
+
+  // Call any URL and show message
+  function callUrl(url) {
+    axios.get(url, {
+      headers: token ? { "Authorization": "Bearer " + token } : {}
+    })
+            .then(resp => {
+              document.getElementById("result").innerText =
+                      JSON.stringify(resp.data, null, 2);
+            })
+            .catch(err => {
+              document.getElementById("result").innerText = err;
+            });
+  }
+</script>
+
+</body>
+</html>
