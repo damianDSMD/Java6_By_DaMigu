@@ -1,80 +1,170 @@
 <template>
-  <div>
-    <h2>Chat</h2>
+  <div style="padding: 20px;">
+    <h1>Quản lý nhân viên</h1>
 
-    <input v-model="username" placeholder="Username" />
+    <!-- Form -->
+    <div style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px;">
+      <h2>{{ isEditing ? 'Cập nhật nhân viên' : 'Thêm nhân viên' }}</h2>
+      
+      <div v-if="isEditing" style="margin-bottom: 10px;">
+        <label>Mã NV</label><br>
+        <input v-model="form.maNV" disabled style="width: 300px; background: #eee;">
+      </div>
 
-    <div>
-      <button :disabled="connected" @click="connect">Connect</button>
-      <button :disabled="!connected" @click="disconnect">Disconnect</button>
+      <div style="margin-bottom: 10px;">
+        <label>Họ và tên *</label><br>
+        <input v-model="form.hoTen" required style="width: 300px;">
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label>Địa chỉ *</label><br>
+        <input v-model="form.diaChi" required style="width: 300px;">
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <label>Giới tính *</label><br>
+        <select v-model="form.gioiTinh" style="width: 300px;">
+          <option :value="true">Nam</option>
+          <option :value="false">Nữ</option>
+        </select>
+      </div>
+
+      <button @click="save" style="padding: 10px 20px; margin-right: 10px;">
+        {{ isEditing ? 'Cập nhật' : 'Thêm' }}
+      </button>
+      <button v-if="isEditing" @click="cancel" style="padding: 10px 20px;">
+        Hủy
+      </button>
     </div>
 
-    <h3>Online Users</h3>
-    <ul>
-      <li v-for="u in users" :key="u">{{ u }}</li>
-    </ul>
-
-    <h3>Send Message</h3>
-    <input v-model="message" placeholder="Message" />
-    <button :disabled="!connected" @click="sendMessage">Send</button>
-
-    <h3>Messages</h3>
-    <div v-for="m in messages" :key="m.timestamp">
-      {{ m.sender }}: {{ m.content }}
-    </div>
+    <!-- Table -->
+    <h2>Danh sách nhân viên</h2>
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th>MaNV</th>
+          <th>Họ Tên</th>
+          <th>Địa chỉ</th>
+          <th>Giới tính</th>
+          <th>Edit</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="emp in employees" :key="emp.maNV">
+          <td>{{ emp.maNV }}</td>
+          <td>{{ emp.hoTen }}</td>
+          <td>{{ emp.diaChi }}</td>
+          <td>{{ emp.gioiTinh ? 'true' : 'false' }}</td>
+          <td><button @click="edit(emp)">Edit</button></td>
+          <td><button @click="deleteEmp(emp.maNV)">Delete</button></td>
+        </tr>
+        <tr v-if="employees.length === 0">
+          <td colspan="6" style="text-align: center;">Chưa có nhân viên</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-import SockJS from "sockjs-client";
-import Stomp from "stompjs";
+<script>
+import { ref as dbRef, push, set, remove, onValue } from 'firebase/database'
 
-const username = ref("");
-const connected = ref(false);
-const client = ref(null);
-const message = ref("");
-const messages = ref([]);
-const users = ref([]);
+export default {
+  data() {
+    return {
+      employees: [],
+      form: {
+        maNV: '',
+        hoTen: '',
+        diaChi: '',
+        gioiTinh: true
+      },
+      isEditing: false
+    }
+  },
 
-function connect() {
-  const socket = new SockJS("http://localhost:8080/ws");
-  client.value = Stomp.over(socket);
+  mounted() {
+    this.loadEmployees()
+  },
 
-  client.value.connect({}, () => {
-    connected.value = true;
+  methods: {
+    loadEmployees() {
+      const employeesRef = dbRef(this.$db, 'employees')
+      onValue(employeesRef, (snapshot) => {
+        const data = snapshot.val()
+        this.employees = []
+        if (data) {
+          Object.keys(data).forEach(key => {
+            this.employees.push({
+              maNV: key,
+              hoTen: data[key].hoTen,
+              diaChi: data[key].diaChi,
+              gioiTinh: data[key].gioiTinh
+            })
+          })
+        }
+      })
+    },
 
-    // subscribe to messages
-    client.value.subscribe("/topic/messages", (msg) => {
-      messages.value.push(JSON.parse(msg.body));
-    });
+    save() {
+      if (!this.form.hoTen || !this.form.diaChi) {
+        alert('Vui lòng nhập đầy đủ thông tin!')
+        return
+      }
 
-    // subscribe to online user list
-    client.value.subscribe("/topic/users", (msg) => {
-      const data = JSON.parse(msg.body);
-      users.value = data.content ? data.content.split(",") : [];
-    });
+      if (this.isEditing) {
+        // Update
+        const empRef = dbRef(this.$db, `employees/${this.form.maNV}`)
+        set(empRef, {
+          hoTen: this.form.hoTen,
+          diaChi: this.form.diaChi,
+          gioiTinh: this.form.gioiTinh
+        }).then(() => {
+          alert('Cập nhật thành công!')
+          this.cancel()
+        })
+      } else {
+        // Create
+        const employeesRef = dbRef(this.$db, 'employees')
+        const newEmpRef = push(employeesRef)
+        set(newEmpRef, {
+          hoTen: this.form.hoTen,
+          diaChi: this.form.diaChi,
+          gioiTinh: this.form.gioiTinh
+        }).then(() => {
+          alert('Thêm thành công!')
+          this.form.hoTen = ''
+          this.form.diaChi = ''
+          this.form.gioiTinh = true
+        })
+      }
+    },
 
-    // send username to backend
-    client.value.send("/app/chat.username", {}, JSON.stringify({
-      sender: username.value,
-      type: "JOIN"
-    }));
-  });
-}
+    edit(emp) {
+      this.form = { ...emp }
+      this.isEditing = true
+      window.scrollTo(0, 0)
+    },
 
-function disconnect() {
-  if (client.value) client.value.disconnect();
-  connected.value = false;
-  users.value = [];
-}
+    cancel() {
+      this.form = {
+        maNV: '',
+        hoTen: '',
+        diaChi: '',
+        gioiTinh: true
+      }
+      this.isEditing = false
+    },
 
-function sendMessage() {
-  client.value.send("/app/chat.send", {}, JSON.stringify({
-    sender: username.value,
-    content: message.value,
-    type: "CHAT"
-  }));
-  message.value = "";
+    deleteEmp(id) {
+      if (confirm('Bạn có chắc muốn xóa nhân viên này?')) {
+        const empRef = dbRef(this.$db, `employees/${id}`)
+        remove(empRef).then(() => {
+          alert('Xóa thành công!')
+        })
+      }
+    }
+  }
 }
 </script>

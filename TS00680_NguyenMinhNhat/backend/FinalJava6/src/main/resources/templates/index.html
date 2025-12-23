@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quản lý Nhân viên</title>
+</head>
+<body>
+<h1>Quản lý nhân viên</h1>
+
+<div>
+    <h2 id="title">Thêm nhân viên</h2>
+    <input type="hidden" id="maNV">
+    Họ tên: <input type="text" id="hoTen"><br><br>
+    Địa chỉ: <input type="text" id="diaChi"><br><br>
+    Giới tính:
+    <select id="gioiTinh">
+        <option value="true">Nam</option>
+        <option value="false">Nữ</option>
+    </select><br><br>
+    <button onclick="save()">Thêm</button>
+    <button id="cancelBtn" onclick="cancel()" style="display:none">Hủy</button>
+</div>
+
+<hr>
+
+<h2>Danh sách</h2>
+<table border="1">
+    <tr>
+        <th>MaNV</th>
+        <th>Họ Tên</th>
+        <th>Địa chỉ</th>
+        <th>Giới tính</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    <tbody id="tbody"></tbody>
+</table>
+
+<script>
+    let editing = false;
+
+    load();
+
+    function load() {
+        fetch('/api/employees')
+            .then(r => r.json())
+            .then(data => {
+                let html = '';
+                data.forEach(e => {
+                    html += `<tr>
+                            <td>${e.maNV}</td>
+                            <td>${e.hoTen}</td>
+                            <td>${e.diaChi}</td>
+                            <td>${e.gioiTinh}</td>
+                            <td><button onclick="edit('${e.maNV}')">Edit</button></td>
+                            <td><button onclick="del('${e.maNV}')">Delete</button></td>
+                        </tr>`;
+                });
+                document.getElementById('tbody').innerHTML = html || '<tr><td colspan="6">Chưa có dữ liệu</td></tr>';
+            });
+    }
+
+    function save() {
+        let data = {
+            hoTen: document.getElementById('hoTen').value,
+            diaChi: document.getElementById('diaChi').value,
+            gioiTinh: document.getElementById('gioiTinh').value === 'true'
+        };
+
+        if (editing) {
+            let id = document.getElementById('maNV').value;
+            fetch('/api/employees/' + id, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(() => {
+                alert('Cập nhật thành công!');
+                cancel();
+                load();
+            });
+        } else {
+            fetch('/api/employees', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(() => {
+                alert('Thêm thành công!');
+                document.getElementById('hoTen').value = '';
+                document.getElementById('diaChi').value = '';
+                load();
+            });
+        }
+    }
+
+    function edit(id) {
+        fetch('/api/employees/' + id)
+            .then(r => r.json())
+            .then(e => {
+                document.getElementById('maNV').value = e.maNV;
+                document.getElementById('hoTen').value = e.hoTen;
+                document.getElementById('diaChi').value = e.diaChi;
+                document.getElementById('gioiTinh').value = e.gioiTinh.toString();
+                document.getElementById('title').innerText = 'Cập nhật nhân viên';
+                document.getElementById('cancelBtn').style.display = 'inline';
+                editing = true;
+            });
+    }
+
+    function cancel() {
+        document.getElementById('maNV').value = '';
+        document.getElementById('hoTen').value = '';
+        document.getElementById('diaChi').value = '';
+        document.getElementById('gioiTinh').value = 'true';
+        document.getElementById('title').innerText = 'Thêm nhân viên';
+        document.getElementById('cancelBtn').style.display = 'none';
+        editing = false;
+    }
+
+    function del(id) {
+        if (confirm('Xóa nhân viên này?')) {
+            fetch('/api/employees/' + id, {method: 'DELETE'})
+                .then(() => {
+                    alert('Xóa thành công!');
+                    load();
+                });
+        }
+    }
+</script>
+</body>
+</html>
